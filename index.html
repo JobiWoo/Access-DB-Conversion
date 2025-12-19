@@ -3,109 +3,249 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Edit Joint Use Proposal – CFED Prototype</title>
+  <title>Access DB Conversion – Edit Joint Use Proposal</title>
 
-  <!-- External CSS -->
-  <link rel="stylesheet" href="styles.css">
+  <!-- Font similar to the city's site -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css?family=Cabin:400,500,600,700&display=swap" rel="stylesheet">
+
+  <!-- Optional: city favicon (you can swap to a local file if desired) -->
+  <link rel="icon" href="https://www.cityofcf.com/sites/default/files/favicon.png" type="image/png">
+
+  <link rel="stylesheet" href="styles.css" />
+  <script src="app.js" defer></script>
 </head>
 
 <body>
-  <div class="wrap">
-    <h1>
-      Edit Joint Use Proposal
-      <span class="pill mono">HTML / JS Prototype</span>
-    </h1>
+  <a class="skip-link" href="#main">Skip to main content</a>
 
-    <div class="card">
-      <!-- Hidden Access-style field -->
-      <input id="txtFormName" type="hidden" value="Locate Proposals" />
+  <header class="site-header">
+    <div class="topbar">
+      <div class="container topbar-inner">
+        <ul class="topbar-links" aria-label="Utility navigation">
+          <li><a href="#" title="Change Language">Change Language</a></li>
+          <li><a href="#" title="News">News</a></li>
+          <li><a href="#" title="Calendar">Calendar</a></li>
+          <li><a href="#" title="Payments">Payments</a></li>
+          <li><a href="#" title="Contact">Contact</a></li>
+          <li><a href="#" title="Search">Search</a></li>
+        </ul>
+      </div>
+    </div>
 
-      <div class="grid">
-        <div class="row">
-          <label for="Proposal_Prefix">Proposal Prefix</label>
-          <select id="Proposal_Prefix">
-            <option value="BCF">BCF</option>
-            <option value="OTHER" selected>OTHER</option>
-          </select>
-        </div>
+    <div class="brandbar">
+      <div class="container brandbar-inner">
+        <a class="brand" href="#" aria-label="City Home">
+          <!-- Using the city's public logo for a familiar look.
+               If you prefer local assets: put a file in /assets/logo-blue.png and change src to "assets/logo-blue.png" -->
+          <img
+            class="brand-logo"
+            src="https://www.cityofcf.com/sites/default/files/logo-blue.png"
+            alt="City of Cuyahoga Falls"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';"
+          />
+          <span class="brand-text-fallback">City of Cuyahoga Falls</span>
+        </a>
 
-        <div class="row">
-          <label for="cmbInitiator">Initiator</label>
-          <select id="cmbInitiator">
-            <option value="">Select…</option>
-            <option>AT&amp;T</option>
-            <option>Spectrum</option>
-            <option>Frontier</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <label for="Combo37">Combo37</label>
-          <select id="Combo37">
-            <option value="">Select…</option>
-            <option>Option A</option>
-            <option>Option B</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <label for="Proposal_Number">Proposal Number</label>
-          <input id="Proposal_Number" type="text" />
-        </div>
-
-        <div class="row">
-          <label for="Temp_ID">Temp ID</label>
-          <input id="Temp_ID" type="text" />
-        </div>
-
-        <div class="row">
-          <label for="Date_Entered">Date Entered</label>
-          <input id="Date_Entered" type="date" />
-        </div>
-
-        <div class="row">
-          <label for="CFES_Date">CFES Date</label>
-          <input id="CFES_Date" type="date" />
-        </div>
-
-        <div class="row">
-          <label for="Utility_Date">Utility Date</label>
-          <input id="Utility_Date" type="date" />
-        </div>
-
-        <div class="row">
-          <label for="Ameritech_File_Number">Ameritech File Number</label>
-          <input id="Ameritech_File_Number" type="text" />
-        </div>
-
-        <div class="row">
-          <label for="Combo9">Completion Status</label>
-          <select id="Combo9">
-            <option value="">Select…</option>
-            <option>Complete</option>
-            <option>Partial</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <label for="Date_Completed">Date Completed</label>
-          <input id="Date_Completed" type="date" />
+        <div class="brand-meta">
+          <div class="app-title">
+            <span class="app-title__name">Access DB Conversion</span>
+            <span class="pill pill--soft">Prototype</span>
+          </div>
+          <div class="app-sub">Front-end-only demo for IS integration review</div>
         </div>
       </div>
+    </div>
 
-      <div class="row" style="margin-top:12px;">
-        <label for="Description">Description</label>
-        <textarea id="Description"></textarea>
+    <nav class="mainnav" aria-label="Primary navigation">
+      <div class="container mainnav-inner">
+        <a class="mainnav__item is-active" href="#">Joint Use Proposal</a>
+        <a class="mainnav__item" href="#">Locate Proposals</a>
+        <a class="mainnav__item" href="#">Reports</a>
+        <a class="mainnav__item" href="#">Admin</a>
+
+        <span class="mainnav__spacer"></span>
+
+        <button class="mainnav__button" id="helpBtn" type="button">Help</button>
       </div>
+    </nav>
+  </header>
 
-      <div class="bar">
-        <button id="Answered">Answered</button>
-        <button id="Command39">Utility Answered</button>
-        <button id="BCF_Number">BCF Number</button>
-        <button id="Completion">Completion</button>
-        <button id="Edit_Description">Edit Description</button>
+  <section class="hero" aria-label="Page banner">
+    <div class="container hero-inner">
+      <p class="hero-kicker">Community Development</p>
+      <h1 class="hero-title">Edit Joint Use Proposal</h1>
+      <p class="hero-sub">
+        Styled to match the city's site while mimicking Access form behavior (locked fields, action buttons, completion dialog).
+      </p>
+    </div>
+  </section>
 
-        <span style="flex:1"></span>
+  <main id="main" class="container page">
+    <div class="layout">
+      <aside class="side">
+        <div class="panel">
+          <h2 class="panel__title">Status</h2>
 
-        <button id="Undo">Undo</button>
-        <but
+          <div class="status-row">
+            <span class="status-label">Record</span>
+            <span class="status-value mono" id="recordId">NEW</span>
+          </div>
+
+          <div class="status-row">
+            <span class="status-label">Unsaved changes</span>
+            <span class="status-value" id="dirtyIndicator">No</span>
+          </div>
+
+          <div class="status-row">
+            <span class="status-label">Last saved</span>
+            <span class="status-value" id="lastSaved">—</span>
+          </div>
+
+          <hr class="rule" />
+
+          <p class="muted small">
+            GitHub Pages hosts static files only. In the real build, “Save” would call an API that writes to your database.
+          </p>
+        </div>
+      </aside>
+
+      <section class="content">
+        <div class="card">
+          <div class="card__header">
+            <div>
+              <h2 class="card__title">Proposal Details</h2>
+              <p class="card__subtitle">
+                Fields are locked by default to mimic Access. Use the action buttons to unlock only what you need.
+              </p>
+            </div>
+            <div class="card__meta">
+              <span class="pill" id="formPill">Locate Proposals</span>
+            </div>
+          </div>
+
+          <!-- Hidden-ish field that exists in Access -->
+          <input id="txtFormName" type="hidden" value="Locate Proposals" />
+
+          <div class="form-grid" role="group" aria-label="Proposal fields">
+            <div class="form-row">
+              <label for="Proposal_Prefix">Proposal Prefix</label>
+              <select id="Proposal_Prefix">
+                <option value="BCF">BCF</option>
+                <option value="OTHER" selected>OTHER</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="cmbInitiator">Initiator</label>
+              <select id="cmbInitiator">
+                <option value="">Select…</option>
+                <option>AT&amp;T</option>
+                <option>Spectrum</option>
+                <option>Frontier</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="Combo37">Combo37</label>
+              <select id="Combo37">
+                <option value="">Select…</option>
+                <option>Option A</option>
+                <option>Option B</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="Proposal_Number">Proposal Number</label>
+              <input id="Proposal_Number" type="text" placeholder="e.g., 2025-00123" />
+            </div>
+
+            <div class="form-row">
+              <label for="Temp_ID">Temp ID</label>
+              <input id="Temp_ID" type="text" placeholder="e.g., TMP-456" />
+            </div>
+
+            <div class="form-row">
+              <label for="Date_Entered">Date Entered</label>
+              <input id="Date_Entered" type="date" />
+            </div>
+
+            <div class="form-row">
+              <label for="CFES_Date">CFES Date</label>
+              <input id="CFES_Date" type="date" />
+            </div>
+
+            <div class="form-row">
+              <label for="Utility_Date">Utility Date</label>
+              <input id="Utility_Date" type="date" />
+            </div>
+
+            <div class="form-row">
+              <label for="Ameritech_File_Number">Ameritech File Number</label>
+              <input id="Ameritech_File_Number" type="text" placeholder="e.g., AMT-####" />
+            </div>
+
+            <div class="form-row">
+              <label for="Combo9">Completion Status</label>
+              <select id="Combo9">
+                <option value="">Select…</option>
+                <option value="complete">Complete</option>
+                <option value="partial">Partial</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="Date_Completed">Date Completed</label>
+              <input id="Date_Completed" type="date" />
+            </div>
+
+            <div class="form-row full">
+              <label for="Description">Description</label>
+              <textarea id="Description" placeholder="Enter proposal description…"></textarea>
+            </div>
+          </div>
+
+          <div class="actions" aria-label="Actions">
+            <div class="actions__group">
+              <button class="btn" id="Answered" type="button">Answered</button>
+              <button class="btn" id="Command39" type="button">Utility Answered</button>
+              <button class="btn" id="BCF_Number" type="button">BCF Number</button>
+              <button class="btn" id="Completion" type="button">Completion</button>
+              <button class="btn" id="Edit_Description" type="button">Edit Description</button>
+            </div>
+
+            <div class="actions__group actions__group--right">
+              <button class="btn btn--ghost" id="Undo" type="button">Undo</button>
+              <button class="btn btn--primary" id="Save" type="button">Save</button>
+              <button class="btn btn--danger" id="Quit_Button" type="button">Quit</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- “Date Completed” pop-up (replaces DoCmd.OpenForm "Date Completed") -->
+  <dialog id="dateCompletedDialog" class="dialog" aria-label="Date Completed Dialog">
+    <div class="dialog__header">
+      <h3 class="dialog__title">Date Completed</h3>
+      <button class="icon-btn" id="dialog_close" type="button" aria-label="Close dialog">✕</button>
+    </div>
+
+    <div class="dialog__body">
+      <div class="form-row">
+        <label for="dialog_notes">Notes</label>
+        <textarea id="dialog_notes" placeholder="Optional completion notes…"></textarea>
+      </div>
+    </div>
+
+    <div class="dialog__footer">
+      <button class="btn" id="dialog_cancel" type="button">Cancel</button>
+      <button class="btn btn--primary" id="dialog_ok" type="button">OK</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
