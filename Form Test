@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Edit Joint Use Proposal (HTML Prototype)</title>
+  <style>
+    :root { --bg:#0b1220; --card:#111b2e; --text:#e8eefc; --muted:#a7b3d4; --line:#223155; --btn:#2a3b66; --btn2:#35508f; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+    .wrap { max-width: 980px; margin: 28px auto; padding: 0 16px; }
+    h1 { margin: 0 0 14px; font-size: 20px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .row { display:flex; flex-direction:column; gap:6px; }
+    label { font-size: 12px; color: var(--muted); }
+    input, select, textarea {
+      width:100%; box-sizing:border-box;
+      background:#0f1930; color:var(--text);
+      border:1px solid var(--line); border-radius:10px;
+      padding:10px 12px; outline:none;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    input:disabled, select:disabled, textarea:disabled { opacity: .55; cursor:not-allowed; }
+    .bar { display:flex; flex-wrap:wrap; gap:10px; margin-top: 14px; }
+    button {
+      background:var(--btn); color:var(--text);
+      border:1px solid var(--line); border-radius:12px;
+      padding:10px 12px; cursor:pointer;
+    }
+    button:hover { background:var(--btn2); }
+    .pill { display:inline-flex; gap:10px; padding:10px 12px; border:1px dashed var(--line); border-radius:12px; color:var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    dialog { border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--text); padding:16px; width:min(520px, 92vw); }
+    dialog::backdrop { background: rgba(0,0,0,.6); }
+    .note { margin-top: 12px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Edit Joint Use Proposal <span class="pill mono">HTML/JS Prototype</span></h1>
+
+    <div class="card">
+      <!-- hidden-ish fields that exist in Access -->
+      <input id="txtFormName" type="hidden" value="Locate Proposals" />
+      <div class="grid">
+        <div class="row">
+          <label for="Proposal_Prefix">Proposal Prefix</label>
+          <select id="Proposal_Prefix">
+            <option value="BCF">BCF</option>
+            <option value="OTHER" selected>OTHER</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="cmbInitiator">Initiator (cmbInitiator)</label>
+          <select id="cmbInitiator">
+            <option value="">Select…</option>
+            <option>AT&amp;T</option>
+            <option>Spectrum</option>
+            <option>Frontier</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="Combo37">Combo37</label>
+          <select id="Combo37">
+            <option value="">Select…</option>
+            <option>Option A</option>
+            <option>Option B</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="Proposal_Number">Proposal Number</label>
+          <input id="Proposal_Number" type="text" placeholder="e.g., 2025-00123" />
+        </div>
+
+        <div class="row">
+          <label for="Temp_ID">Temp ID</label>
+          <input id="Temp_ID" type="text" placeholder="e.g., TMP-456" />
+        </div>
+
+        <div class="row">
+          <label for="Date_Entered">Date Entered</label>
+          <input id="Date_Entered" type="date" />
+        </div>
+
+        <div class="row">
+          <label for="CFES_Date">CFES Date</label>
+          <input id="CFES_Date" type="date" />
+        </div>
+
+        <div class="row">
+          <label for="Utility_Date">Utility Date</label>
+          <input id="Utility_Date" type="date" />
+        </div>
+
+        <div class="row">
+          <label for="Ameritech_File_Number">Ameritech File Number</label>
+          <input id="Ameritech_File_Number" type="text" placeholder="e.g., AMT-####" />
+        </div>
+
+        <div class="row">
+          <label for="Combo9">Completion Status (Combo9)</label>
+          <select id="Combo9">
+            <option value="">Select…</option>
+            <option value="complete">Complete</option>
+            <option value="partial">Partial</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="Date_Completed">Date Completed</label>
+          <input id="Date_Completed" type="date" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <label for="Description">Description</label>
+        <textarea id="Description" placeholder="Enter proposal description…"></textarea>
+      </div>
+
+      <!-- action buttons that mimic the Access click handlers -->
+      <div class="bar">
+        <button id="Answered">Answered (enable CFES Date)</button>
+        <button id="Command39">Utility Answered (enable Utility Date + Ameritech #)</button>
+        <button id="BCF_Number">BCF Number (enable Proposal # + Temp ID)</button>
+        <button id="Completion">Completion (open “Date Completed” form)</button>
+        <button id="Edit_Description">Edit Description</button>
+
+        <span style="flex:1"></span>
+
+        <button id="Undo">Undo</button>
+        <button id="Save">Save</button>
+        <button id="Quit_Button">Quit</button>
+      </div>
+
+      <div class="note">
+        This prototype copies your VBA patterns:
+        <span class="mono">Form_Open</span> disables/locks fields;
+        button clicks temporarily enable fields;
+        AfterUpdate handlers re-lock and move focus to Save.
+      </div>
+    </div>
+  </div>
+
+  <!-- “Date Completed” pop-up (replaces DoCmd.OpenForm "Date Completed") -->
+  <dialog id="dateCompletedDialog">
+    <h3 style="margin:0 0 10px;">Date Completed</h3>
+    <div class="row">
+      <label for="dialog_notes">Notes</label>
+      <textarea id="dialog_notes" placeholder="Optional completion notes…"></textarea>
+    </div>
+    <div class="bar" style="margin-top:12px;">
+      <button id="dialog_ok">OK</button>
+      <button id="dialog_cancel">Cancel</button>
+    </div>
+  </dialog>
+
+  <script>
+    // Helpers similar to Enabled/Locked in Access
+    const $ = (id) => document.getElementById(id);
+
+    function setLocked(id, locked) {
+      // In HTML, "disabled" is the closest to Access Enabled=False or Locked=True.
+      // We treat "locked" as disabled to mimic the Access behavior.
+      $(id).disabled = !!locked;
+    }
+
+    function focusSave() { $("Save").focus(); }
+
+    function lockAllInputs() {
+      [
+        "cmbInitiator","Combo37","Proposal_Number","Temp_ID","CFES_Date","Date_Entered",
+        "Utility_Date","Ameritech_File_Number","Combo9","Date_Completed","Description"
+      ].forEach(id => setLocked(id, true));
+
+      // Conditional enable of BCF_Number button (like your VBA)
+      const isBCF = $("Proposal_Prefix").value === "BCF";
+      $("BCF_Number").disabled = !isBCF;
+    }
+
+    // --- Mimic Form_Open ---
+    function formOpen() { lockAllInputs(); }
+    formOpen();
+
+    // If user changes prefix, re-evaluate BCF_Number enablement
+    $("Proposal_Prefix").addEventListener("change", lockAllInputs);
+
+    // --- VBA: Ameritech_File_Number_AfterUpdate -> Save.SetFocus
+    $("Ameritech_File_Number").addEventListener("change", focusSave);
+
+    // --- VBA: Answered_Click -> enable CFES_Date and focus it
+    $("Answered").addEventListener("click", () => {
+      setLocked("CFES_Date", false);
+      $("CFES_Date").focus();
+    });
+
+    // --- VBA: CFES_Date_AfterUpdate -> Save focus, CFES_Date disabled, Utility_Date locked
+    $("CFES_Date").addEventListener("change", () => {
+      focusSave();
+      setLocked("CFES_Date", true);
+      setLocked("Utility_Date", true);
+    });
+
+    // --- VBA: Command39_Click -> enable Utility_Date + Ameritech_File_Number and focus Utility_Date
+    $("Command39").addEventListener("click", () => {
+      setLocked("Utility_Date", false);
+      setLocked("Ameritech_File_Number", false);
+      $("Utility_Date").focus();
+    });
+
+    // --- VBA: BCF_Number_Click -> enable Proposal_Number + Temp_ID and focus Proposal_Number
+    $("BCF_Number").addEventListener("click", () => {
+      setLocked("Proposal_Number", false);
+      setLocked("Temp_ID", false);
+      $("Proposal_Number").focus();
+    });
+
+    // --- VBA: Proposal_Number_AfterUpdate if prefix=BCF then Temp_ID="N/A" and focus Save
+    $("Proposal_Number").addEventListener("change", () => {
+      if ($("Proposal_Prefix").value === "BCF") {
+        $("Temp_ID").value = "N/A";
+        focusSave();
+      }
+    });
+
+    // --- VBA: Completion_Click -> enable Combo9 + Date_Completed, then open "Date Completed" form
+    $("Completion").addEventListener("click", () => {
+      setLocked("Combo9", false);
+      setLocked("Date_Completed", false);
+      $("dateCompletedDialog").showModal();
+    });
+
+    // Dialog buttons (stand-in for the Access subform)
+    $("dialog_ok").addEventListener("click", () => $("dateCompletedDialog").close("ok"));
+    $("dialog_cancel").addEventListener("click", () => $("dateCompletedDialog").close("cancel"));
+
+    // --- VBA: Date_Completed_AfterUpdate -> Save focus; lock Combo9 & Date_Completed
+    $("Date_Completed").addEventListener("change", () => {
+      focusSave();
+      setLocked("Combo9", true);
+      setLocked("Date_Completed", true);
+    });
+
+    // --- VBA: Description_AfterUpdate -> Save focus; lock Description
+    $("Description").addEventListener("change", () => {
+      focusSave();
+      setLocked("Description", true);
+    });
+
+    // --- VBA: Edit_Description_Click -> enable Description and focus it
+    $("Edit_Description").addEventListener("click", () => {
+      setLocked("Description", false);
+      $("Description").focus();
+    });
+
+    // --- VBA: Save_GotFocus locks everything and conditionally enables BCF_Number
+    $("Save").addEventListener("focus", () => {
+      lockAllInputs();
+    });
+
+    // --- VBA: Save_Click -> close + show calling form based on txtFormName
+    $("Save").addEventListener("click", () => {
+      // In a real app: validate, POST to server/API, then route back.
+      const formName = $("txtFormName").value;
+      alert(`Saved. Returning to: ${formName}\n(Prototype behavior — wire to DB/API in real build.)`);
+      // "Close" could be: window.close() (often blocked), or navigate:
+      // location.href = "/locate-proposals.html";
+    });
+
+    // --- VBA: Undo_Click -> undo edits
+    $("Undo").addEventListener("click", () => {
+      // Simple stand-in: reset all fields (real version would track a "dirty" model)
+      if (confirm("Undo changes? (Prototype resets the form fields)")) {
+        document.querySelectorAll("input, select, textarea").forEach(el => {
+          if (el.type === "hidden") return;
+          if (el.tagName === "SELECT") el.selectedIndex = 0;
+          else el.value = "";
+        });
+        lockAllInputs();
+      }
+    });
+
+    // --- VBA: Quit_Button_Click -> close + return to calling form
+    $("Quit_Button").addEventListener("click", () => {
+      const formName = $("txtFormName").value;
+      alert(`Quit. Returning to: ${formName}\n(Prototype behavior — route in real build.)`);
+    });
+  </script>
+</body>
+</html>
