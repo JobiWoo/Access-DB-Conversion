@@ -1,276 +1,335 @@
-// Access DB Conversion – Prototype behavior (locks/unlocks like Access)
-// Keeps the SAME IDs you were already using.
+const DATA_URL = "./data/transformers.json";
 
-const $ = (id) => document.getElementById(id);
-
-const FIELD_IDS = [
-  "Proposal_Prefix",
-  "cmbInitiator",
-  "Combo37",
-  "Proposal_Number",
-  "Temp_ID",
-  "Date_Entered",
-  "CFES_Date",
-  "Utility_Date",
-  "Ameritech_File_Number",
-  "Combo9",
-  "Date_Completed",
-  "Description",
+// Inventory statuses that should appear on this page
+const INVENTORY_STATUSES = [
+  "IN STOCK",
+  "NEW T.B.T.",
+  "RECOVERED T.B.T.",
+  "NEEDS TESTED",
+  "ON HOLD",
+  "NEEDS PAINTED"
 ];
 
-function setLocked(id, locked) {
-  const el = $(id);
-  if (!el) return;
-  // In HTML: disabled is the closest stand-in for Access Enabled=False / Locked=True behavior
-  el.disabled = !!locked;
+// State
+let allRows = [];
+let filteredRows = [];
+let selectedRow = null;
+let filtersApplied = false;
+
+// Elements
+const elType = document.getElementById("filter-type");
+const elKva = document.getElementById("filter-kva");
+const elPri = document.getElementById("filter-pri");
+const elSec = document.getElementById("filter-sec");
+
+const btnApply = document.getElementById("btn-apply");
+const btnViewEdit = document.getElementById("btn-viewedit");
+const btnPreview = document.getElementById("btn-preview");
+const btnPrint = document.getElementById("btn-print");
+const btnQuit = document.getElementById("btn-quit");
+const btnHelp = document.getElementById("btn-help");
+
+const elSearch = document.getElementById("search");
+const elStatus = document.getElementById("status");
+const tbody = document.getElementById("grid-body");
+
+const modal = document.getElementById("modal");
+const modalClose = document.getElementById("modal-close");
+const modalBody = document.getElementById("modal-body");
+const modalSubtitle = document.getElementById("modal-subtitle");
+
+// ---------- Helpers ----------
+function safeStr(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).trim();
 }
 
-function focusSave() {
-  const btn = $("Save");
-  if (btn) btn.focus();
+function normalizeStatus(s) {
+  return safeStr(s).toUpperCase();
 }
 
-function lockAllInputs() {
-  [
-    "cmbInitiator",
-    "Combo37",
-    "Proposal_Number",
-    "Temp_ID",
-    "CFES_Date",
-    "Date_Entered",
-    "Utility_Date",
-    "Ameritech_File_Number",
-    "Combo9",
-    "Date_Completed",
-    "Description",
-  ].forEach((id) => setLocked(id, true));
-
-  // Conditional enable of BCF_Number button (like your VBA)
-  const isBCF = $("Proposal_Prefix")?.value === "BCF";
-  const bcfBtn = $("BCF_Number");
-  if (bcfBtn) bcfBtn.disabled = !isBCF;
+/** Always format impedance to 2 decimal places */
+function formatImp(v) {
+  if (v === null || v === undefined || v === "") return "";
+  const n = Number(v);
+  if (Number.isNaN(n)) return safeStr(v);
+  return n.toFixed(2);
 }
 
-function showToast(message) {
-  const toast = $("toast");
-  if (!toast) return;
-
-  toast.textContent = message;
-  toast.classList.add("is-visible");
-
-  window.clearTimeout(showToast._timer);
-  showToast._timer = window.setTimeout(() => {
-    toast.classList.remove("is-visible");
-  }, 3200);
+function uniqSorted(values) {
+  return Array.from(new Set(values.filter(v => safeStr(v) !== "")))
+    .sort((a, b) => safeStr(a).localeCompare(safeStr(b), undefined, { numeric: true }));
 }
 
-function readState() {
-  const state = {};
-  for (const id of FIELD_IDS) {
-    const el = $(id);
-    if (!el) continue;
-    state[id] = el.value;
+function setButtonsState() {
+  btnPreview.disabled = !filtersApplied;
+  btnPrint.disabled = !filtersApplied;
+  btnViewEdit.disabled = !(filtersApplied && selectedRow);
+}
+
+function isInventoryStatus(row) {
+  return INVENTORY_STATUSES.includes(normalizeStatus(row.STATUS));
+}
+
+function populateSelect(selectEl, values, allLabel) {
+  const opts = uniqSorted(values);
+  selectEl.innerHTML =
+    `<option value="">${allLabel}</option>` +
+    opts.map(v => `<option value="${v}">${v}</option>`).join("");
+}
+
+// ---------- Filtering ----------
+function applyFilters() {
+  const typeVal = elType.value;
+  const kvaVal = elKva.value;
+  const priVal = elPri.value;
+  const secVal = elSec.value;
+
+  const inventoryRows = allRows.filter(isInventoryStatus);
+
+  filteredRows = inventoryRows.filter(r => {
+    if (typeVal && safeStr(r.TYPE) !== typeVal) return false;
+    if (kvaVal && safeStr(r.KVA) !== kvaVal) return false;
+    if (priVal && safeStr(r.PRI_VOLT) !== priVal) return false;
+    if (secVal && safeStr(r.SEC_VOLT) !== secVal) return false;
+    return true;
+  });
+
+  filtersApplied = true;
+  selectedRow = null;
+  setButtonsState();
+  applySearchAndRender();
+}
+
+function applySearchAndRender() {
+  const q = safeStr(elSearch.value).toLowerCase();
+
+  const rows = (!q)
+    ? filteredRows
+    : filteredRows.filter(r =>
+        Object.values(r).map(safeStr).join(" ").toLowerCase().includes(q)
+      );
+
+  renderGrid(rows);
+  elStatus.textContent = `Inventory records ${rows.length} (of ${allRows.length} total transformers)`;
+}
+
+// ---------- Grid ----------
+function renderGrid(rows) {
+  tbody.innerHTML = "";
+
+  if (!rows.length) {
+    tbody.innerHTML =
+      `<tr><td colspan="5" style="padding:14px;color:#5b677a;">No inventory records found.</td></tr>`;
+    return;
   }
-  return state;
+
+  rows.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${safeStr(r.MFG)}</td>
+      <td>${safeStr(r.SERIAL)}</td>
+      <td>${formatImp(r.IMP)}</td>
+      <td>${safeStr(r.STATUS)}</td>
+      <td>${safeStr(r.LOCATION)}</td>
+    `;
+
+    tr.addEventListener("click", () => {
+      document.querySelectorAll("tr.selected").forEach(x => x.classList.remove("selected"));
+      tr.classList.add("selected");
+      selectedRow = r;
+      setButtonsState();
+    });
+
+    tbody.appendChild(tr);
+  });
 }
 
-function applyState(state) {
-  for (const id of FIELD_IDS) {
-    const el = $(id);
-    if (!el) continue;
-    if (state[id] !== undefined) el.value = state[id];
+// ---------- Modal ----------
+function openModalForRow(row) {
+  modalSubtitle.textContent = `Trans_ID: ${safeStr(row.TRANS_ID) || "—"} • Status: ${safeStr(row.STATUS) || "—"}`;
+
+  modalBody.innerHTML = `
+    <div class="kv">
+      ${Object.keys(row).map(k => {
+        const val = (k === "IMP") ? formatImp(row[k]) : safeStr(row[k]);
+        return `
+          <div class="field">
+            <div class="label">${k}</div>
+            <div class="value">${val || "—"}</div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+
+  modal.classList.remove("hidden");
+}
+
+function closeModal() {
+  modal.classList.add("hidden");
+}
+
+// ---------- Report ----------
+const REPORT_COLUMNS = [
+  { key: "MFG",     label: "Manufacturer" },
+  { key: "SERIAL",  label: "Serial Number" },
+  { key: "IMP",     label: "Imp", formatter: formatImp },
+  { key: "LOCATION",label: "Location" },
+  { key: "STATUS",  label: "Status" },
+  { key: "REMARKS", label: "Remarks" }
+];
+
+function buildReportHtml(rows, title) {
+  const now = new Date().toLocaleString();
+
+  const head = REPORT_COLUMNS.map(c => `<th>${c.label}</th>`).join("");
+  const body = rows.map(r => {
+    const tds = REPORT_COLUMNS.map(c => {
+      const raw = r[c.key];
+      const val = c.formatter ? c.formatter(raw) : safeStr(raw);
+      return `<td>${val}</td>`;
+    }).join("");
+    return `<tr>${tds}</tr>`;
+  }).join("");
+
+  return `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${title}</title>
+  <style>
+    body{ font-family: Cabin, Segoe UI, Arial, sans-serif; margin:18px; color:#111827; }
+    h1{ font-size:20px; margin:0 0 6px 0; font-weight:900; }
+    .meta{ font-size:12px; color:#6b7280; margin-bottom:12px; }
+    table{ width:100%; border-collapse:collapse; }
+    th{
+      background:#0b3a78; color:#fff;
+      text-align:left; font-size:12px; padding:8px;
+    }
+    td{
+      padding:7px 8px;
+      border-bottom:1px solid #e5e7eb;
+      font-size:12px;
+      vertical-align:top;
+    }
+    td:last-child{
+      white-space:normal;
+      max-width:520px;
+      word-wrap:break-word;
+    }
+    @media print{
+      body{ margin:10mm; }
+    }
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  <div class="meta">Generated: ${now} • Inventory Records: ${rows.length}</div>
+  <table>
+    <thead><tr>${head}</tr></thead>
+    <tbody>${body}</tbody>
+  </table>
+</body>
+</html>`;
+}
+
+function openReportWindow(doPrint) {
+  if (!filtersApplied) return;
+
+  const q = safeStr(elSearch.value).toLowerCase();
+  const rows = (!q)
+    ? filteredRows
+    : filteredRows.filter(r =>
+        Object.values(r).map(safeStr).join(" ").toLowerCase().includes(q)
+      );
+
+  const html = buildReportHtml(rows, "Transformer Inventory Listing");
+
+  const w = window.open("", "_blank");
+  if (!w) {
+    alert("Popup blocked. Please allow popups for Preview/Print.");
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+
+  if (doPrint) setTimeout(() => w.print(), 250);
+}
+
+// ---------- Help ----------
+function showHelp() {
+  alert(
+`Transformer Inventory Listing
+
+This page shows ONLY inventory statuses:
+${INVENTORY_STATUSES.join(", ")}
+
+Impedance (Imp) is always displayed with two decimal places.
+
+Use filters as needed, then click Search.
+Preview / Print reflect the current filtered inventory.`
+  );
+}
+
+// ---------- Init ----------
+async function init() {
+  try {
+    const res = await fetch(DATA_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    allRows = await res.json();
+
+    const inv = allRows.filter(isInventoryStatus);
+
+    populateSelect(elType, inv.map(r => safeStr(r.TYPE)), "All Types");
+    populateSelect(elKva,  inv.map(r => safeStr(r.KVA)),  "All KVA");
+    populateSelect(elPri,  inv.map(r => safeStr(r.PRI_VOLT)), "All Primary");
+    populateSelect(elSec,  inv.map(r => safeStr(r.SEC_VOLT)), "All Secondary");
+
+    filtersApplied = false;
+    selectedRow = null;
+    setButtonsState();
+
+    elType.focus();
+    applyFilters();
+
+  } catch (err) {
+    elStatus.textContent = `Failed to load data: ${err.message}`;
   }
 }
 
-let savedState = {};
+// ---------- Events ----------
+btnApply.addEventListener("click", applyFilters);
 
-function setDirtyUI(isDirty) {
-  const dirtyEl = $("dirtyIndicator");
-  if (dirtyEl) dirtyEl.textContent = isDirty ? "Yes" : "No";
+function markFiltersDirty() {
+  filtersApplied = false;
+  selectedRow = null;
+  setButtonsState();
+  document.querySelectorAll("tr.selected").forEach(x => x.classList.remove("selected"));
 }
 
-function updateDirty() {
-  const current = readState();
-  const isDirty = JSON.stringify(current) !== JSON.stringify(savedState);
-  setDirtyUI(isDirty);
-  return isDirty;
-}
+elType.addEventListener("change", markFiltersDirty);
+elKva.addEventListener("change", markFiltersDirty);
+elPri.addEventListener("change", markFiltersDirty);
+elSec.addEventListener("change", markFiltersDirty);
 
-function setLastSavedNow() {
-  const el = $("lastSaved");
-  if (!el) return;
-  el.textContent = new Date().toLocaleString();
-}
+elSearch.addEventListener("input", applySearchAndRender);
 
-function initializeSavedState() {
-  savedState = readState();
-  setDirtyUI(false);
-}
-
-function wireDirtyTracking() {
-  const controls = document.querySelectorAll("input, select, textarea");
-  controls.forEach((el) => {
-    if (el.id === "txtFormName") return;
-    if (el.id === "dialog_notes") return;
-
-    const handler = () => updateDirty();
-    el.addEventListener("input", handler);
-    el.addEventListener("change", handler);
-  });
-}
-
-function formOpen() {
-  // Mimic Form_Open: lock everything
-  lockAllInputs();
-
-  // UI bits
-  const formName = $("txtFormName")?.value || "Prototype";
-  const pill = $("formPill");
-  if (pill) pill.textContent = formName;
-
-  initializeSavedState();
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  formOpen();
-  wireDirtyTracking();
-
-  // If user changes prefix, re-evaluate BCF_Number enablement
-  $("Proposal_Prefix")?.addEventListener("change", () => {
-    lockAllInputs();
-    updateDirty();
-  });
-
-  // --- VBA: Ameritech_File_Number_AfterUpdate -> Save.SetFocus
-  $("Ameritech_File_Number")?.addEventListener("change", focusSave);
-
-  // --- VBA: Answered_Click -> enable CFES_Date and focus it
-  $("Answered")?.addEventListener("click", () => {
-    setLocked("CFES_Date", false);
-    $("CFES_Date")?.focus();
-    showToast("CFES Date unlocked.");
-  });
-
-  // --- VBA: CFES_Date_AfterUpdate -> Save focus, CFES_Date disabled, Utility_Date locked
-  $("CFES_Date")?.addEventListener("change", () => {
-    focusSave();
-    setLocked("CFES_Date", true);
-    setLocked("Utility_Date", true);
-    showToast("CFES Date set.");
-  });
-
-  // --- VBA: Command39_Click -> enable Utility_Date + Ameritech_File_Number and focus Utility_Date
-  $("Command39")?.addEventListener("click", () => {
-    setLocked("Utility_Date", false);
-    setLocked("Ameritech_File_Number", false);
-    $("Utility_Date")?.focus();
-    showToast("Utility fields unlocked.");
-  });
-
-  // --- VBA: BCF_Number_Click -> enable Proposal_Number + Temp_ID and focus Proposal_Number
-  $("BCF_Number")?.addEventListener("click", () => {
-    setLocked("Proposal_Number", false);
-    setLocked("Temp_ID", false);
-    $("Proposal_Number")?.focus();
-    showToast("Proposal fields unlocked.");
-  });
-
-  // --- VBA: Proposal_Number_AfterUpdate if prefix=BCF then Temp_ID="N/A" and focus Save
-  $("Proposal_Number")?.addEventListener("change", () => {
-    if ($("Proposal_Prefix")?.value === "BCF") {
-      const temp = $("Temp_ID");
-      if (temp) temp.value = "N/A";
-      focusSave();
-    }
-  });
-
-  // --- VBA: Completion_Click -> enable Combo9 + Date_Completed, then open "Date Completed" form
-  $("Completion")?.addEventListener("click", () => {
-    setLocked("Combo9", false);
-    setLocked("Date_Completed", false);
-
-    const dlg = $("dateCompletedDialog");
-    if (dlg && typeof dlg.showModal === "function") dlg.showModal();
-
-    showToast("Completion fields unlocked.");
-  });
-
-  // Dialog buttons
-  const dlg = $("dateCompletedDialog");
-  $("dialog_ok")?.addEventListener("click", () => dlg?.close("ok"));
-  $("dialog_cancel")?.addEventListener("click", () => dlg?.close("cancel"));
-  $("dialog_close")?.addEventListener("click", () => dlg?.close("cancel"));
-
-  // --- VBA: Date_Completed_AfterUpdate -> Save focus; lock Combo9 & Date_Completed
-  $("Date_Completed")?.addEventListener("change", () => {
-    focusSave();
-    setLocked("Combo9", true);
-    setLocked("Date_Completed", true);
-    showToast("Completion date set.");
-  });
-
-  // --- VBA: Description_AfterUpdate -> Save focus; lock Description
-  $("Description")?.addEventListener("change", () => {
-    focusSave();
-    setLocked("Description", true);
-    showToast("Description updated.");
-  });
-
-  // --- VBA: Edit_Description_Click -> enable Description and focus it
-  $("Edit_Description")?.addEventListener("click", () => {
-    setLocked("Description", false);
-    $("Description")?.focus();
-    showToast("Description unlocked.");
-  });
-
-  // --- VBA: Save_GotFocus locks everything and conditionally enables BCF_Number
-  $("Save")?.addEventListener("focus", () => {
-    lockAllInputs();
-  });
-
-  // --- VBA: Save_Click -> (prototype) store state in memory + update UI
-  $("Save")?.addEventListener("click", () => {
-    lockAllInputs();
-
-    savedState = readState(); // "committed" state in-memory (prototype)
-    setLastSavedNow();
-    setDirtyUI(false);
-
-    showToast("Saved (prototype).");
-  });
-
-  // --- VBA: Undo_Click -> revert to last saved state (instead of clearing everything)
-  $("Undo")?.addEventListener("click", () => {
-    const isDirty = updateDirty();
-    if (!isDirty) {
-      showToast("Nothing to undo.");
-      return;
-    }
-
-    const ok = confirm("Undo changes? (Revert to last saved state)");
-    if (!ok) return;
-
-    applyState(savedState);
-    lockAllInputs();
-    setDirtyUI(false);
-    showToast("Reverted to last saved state.");
-  });
-
-  // --- VBA: Quit_Button_Click -> confirm if dirty
-  $("Quit_Button")?.addEventListener("click", () => {
-    const isDirty = updateDirty();
-    if (isDirty) {
-      const ok = confirm("You have unsaved changes. Quit anyway?");
-      if (!ok) return;
-    }
-
-    showToast("Quit (prototype).");
-    // Optional: route somewhere if you add another page later
-    // location.href = "./";
-  });
-
-  // Header Help button
-  $("helpBtn")?.addEventListener("click", () => {
-    showToast("Help: Use the action buttons to unlock fields, then click Save.");
-  });
+btnViewEdit.addEventListener("click", () => {
+  if (selectedRow) openModalForRow(selectedRow);
 });
+
+btnPreview.addEventListener("click", () => openReportWindow(false));
+btnPrint.addEventListener("click", () => openReportWindow(true));
+
+btnQuit.addEventListener("click", () => location.reload());
+
+if (btnHelp) btnHelp.addEventListener("click", showHelp);
+modalClose.addEventListener("click", closeModal);
+modal.addEventListener("click", (e) => {
+  if (e.target === modal) closeModal();
+});
+
+init();
